@@ -14,32 +14,37 @@ namespace DummyClient
             IPAddress ipAddress = ipHost.AddressList[0];
             IPEndPoint endPoint = new IPEndPoint(ipAddress, 7777);
 
-            // Set phone setting
-            Socket socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-
-            try
+            while (true)
             {
-                // Send message to GateKeeper
-                socket.Connect(endPoint);
-                Console.WriteLine($"Connected To {socket.RemoteEndPoint.ToString()}");
+                // Set phone setting
+                Socket socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
-                // Send
-                byte[] sendBuff = Encoding.UTF8.GetBytes("Hello, world!");
-                int sendBytes = socket.Send(sendBuff);
+                try
+                {
+                    // Send message to GateKeeper
+                    socket.Connect(endPoint);
+                    Console.WriteLine($"Connected To {socket.RemoteEndPoint.ToString()}");
 
-                // Receive
-                byte[] receiveBuff = new byte[1024];
-                int receiveBytes = socket.Receive(receiveBuff);
-                string receiveData = Encoding.UTF8.GetString(receiveBuff, 0, receiveBytes);
-                Console.WriteLine($"[From Server] {receiveData}");
+                    // Send
+                    byte[] sendBuff = Encoding.UTF8.GetBytes("Hello, world!");
+                    int sendBytes = socket.Send(sendBuff);
 
-                // Exit
-                socket.Shutdown(SocketShutdown.Both);
-                socket.Close();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
+                    // Receive
+                    byte[] receiveBuff = new byte[1024];
+                    int receiveBytes = socket.Receive(receiveBuff);
+                    string receiveData = Encoding.UTF8.GetString(receiveBuff, 0, receiveBytes);
+                    Console.WriteLine($"[From Server] {receiveData}");
+
+                    // Exit
+                    socket.Shutdown(SocketShutdown.Both);
+                    socket.Close();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.ToString());
+                }
+
+                Thread.Sleep(100);
             }
         }
     }
