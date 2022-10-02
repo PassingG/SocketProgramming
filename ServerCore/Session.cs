@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ServerCore
 {
-    class Session
+    abstract class Session
     {
         private Socket _socket;
         private int _disconnected = 0;
@@ -18,10 +18,10 @@ namespace ServerCore
         private SocketAsyncEventArgs _sendArgs = new SocketAsyncEventArgs();
         private SocketAsyncEventArgs _receiveArgs = new SocketAsyncEventArgs();
 
-        public void OnConnected(EndPoint endPoint) { }
-        public void OnReceive(ArraySegment<byte> buffer) { }
-        public void OnSend(int numberOfBytes) { }
-        public void OnDisconnected(EndPoint endPoint) { }
+        public abstract void OnReceive(ArraySegment<byte> buffer);
+        public abstract void OnConnected(EndPoint endPoint);
+        public abstract void OnSend(int numberOfBytes);
+        public abstract void OnDisconnected(EndPoint endPoint);
 
         public void Start(Socket socket)
         {
@@ -53,6 +53,7 @@ namespace ServerCore
                 return;
             }
 
+            OnDisconnected(_socket.RemoteEndPoint);
             _socket.Shutdown(SocketShutdown.Both);
             _socket.Close();
         }
@@ -85,8 +86,6 @@ namespace ServerCore
                     {
                         _sendArgs.BufferList = null;
                         _pendingList.Clear();
-
-                        Console.WriteLine($"Transferred bytes: {_sendArgs.BytesTransferred}");
 
                         if (_sendQueue.Count > 0)
                         {
@@ -122,9 +121,7 @@ namespace ServerCore
             {
                 try
                 {
-                    string receiveData = Encoding.UTF8.GetString(args.Buffer, args.Offset, args.BytesTransferred);
-                    Console.WriteLine($"[From Client] {receiveData}");
-
+                    OnReceive(new ArraySegment<byte>(args.Buffer, args.Offset, args.BytesTransferred));
                     RegisterReceive();
                 }
                 catch (Exception e)

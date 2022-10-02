@@ -4,29 +4,38 @@ using System.Text;
 
 namespace ServerCore
 {
+    class GameSession : Session
+    {
+        public override void OnConnected(EndPoint endPoint)
+        {
+            Console.WriteLine($"OnConnected : {endPoint}");
+
+            byte[] sendBuffer = Encoding.UTF8.GetBytes("Welcome to MMORPG Server !");
+            Send(sendBuffer);
+            Thread.Sleep(1000);
+            Disconnect();
+        }
+
+        public override void OnDisconnected(EndPoint endPoint)
+        {
+            Console.WriteLine($"OnDisconnected : {endPoint}");
+        }
+
+        public override void OnReceive(ArraySegment<byte> buffer)
+        {
+            string receiveData = Encoding.UTF8.GetString(buffer.Array, buffer.Offset, buffer.Count);
+            Console.WriteLine($"[From Client] {receiveData}");
+        }
+
+        public override void OnSend(int numberOfBytes)
+        {
+            Console.WriteLine($"Transferred bytes: {numberOfBytes}");
+        }
+    }
+
     class Program
     {
         static Listener _listner = new Listener();
-        static void OnAcceptHandler(Socket clientSocket)
-        {
-            try
-            {
-                Session session = new Session();
-                session.Start(clientSocket);
-
-                // Send
-                byte[] sendBuffer = Encoding.UTF8.GetBytes("Welcome to MMORPG Server !");
-                clientSocket.Send(sendBuffer);
-
-                Thread.Sleep(1000);
-
-                session.Disconnect();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-            }
-        }
 
         static void Main(string[] args)
         {
@@ -36,7 +45,7 @@ namespace ServerCore
             IPAddress ipAddress = ipHost.AddressList[0];
             IPEndPoint endPoint = new IPEndPoint(ipAddress, 7777);
 
-            _listner.Init(endPoint, OnAcceptHandler);
+            _listner.Init(endPoint, () => { return new GameSession(); });
 
             while (true)
             {
