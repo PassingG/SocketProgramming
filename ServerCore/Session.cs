@@ -9,6 +9,13 @@ namespace ServerCore
         private Socket _socket;
         private int _disconnected = 0;
 
+        private object _lock = new object();
+
+        private Queue<byte[]> _sendQueue = new Queue<byte[]>();
+        private bool _pending = false;
+
+        private SocketAsyncEventArgs _sendArgs = new SocketAsyncEventArgs();
+
         public void Start(Socket socket)
         {
             _socket = socket;
@@ -16,12 +23,21 @@ namespace ServerCore
             receiveArgs.Completed += new EventHandler<SocketAsyncEventArgs>(OnReceiveCompleted);
             receiveArgs.SetBuffer(new byte[1024], 0, 1024);
 
+            _sendArgs.Completed += new EventHandler<SocketAsyncEventArgs>(OnSendCompleted);
+
             RegisterReceive(receiveArgs);
         }
 
         public void Send(byte[] sendBuffer)
         {
-            _socket.Send(sendBuffer);
+            lock (_lock)
+            {
+                _sendQueue.Enqueue(sendBuffer);
+                if (_pending.Equals(false))
+                {
+                    RegisterSend();
+                }
+            }
         }
 
         public void Disconnect()
@@ -36,6 +52,50 @@ namespace ServerCore
         }
 
         #region [ Network Communication ]
+
+        private void RegisterSend()
+        {
+            _pending = true;
+
+            byte[] buffer = _sendQueue.Dequeue();
+            _sendArgs.SetBuffer(buffer, 0, buffer.Length);
+
+            bool pending = _socket.SendAsync(_sendArgs);
+            if (pending.Equals(false))
+            {
+                OnSendCompleted(null, _sendArgs);
+            }
+        }
+
+        private void OnSendCompleted(object sender, SocketAsyncEventArgs args)
+        {
+            lock (_lock)
+            {
+                if (args.BytesTransferred > 0 && args.SocketError == SocketError.Success)
+                {
+                    try
+                    {
+                        if (_sendQueue.Count > 0)
+                        {
+                            RegisterSend();
+                        }
+                        else
+                        {
+                            _pending = false;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"OnSendCompleted Failed {e}");
+                    }
+                }
+                else
+                {
+                    Disconnect();
+                }
+            }
+        }
+
         private void RegisterReceive(SocketAsyncEventArgs args)
         {
             bool pending = _socket.ReceiveAsync(args);
