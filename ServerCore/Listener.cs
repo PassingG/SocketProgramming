@@ -1,12 +1,13 @@
+using System;
 using System.Net;
 using System.Net.Sockets;
 
 namespace ServerCore
 {
-    class Listener
+    public class Listener
     {
-        Socket _listenSocket;
-        Func<Session> _sessionFactory;
+        private Socket _listenSocket;
+        private Func<Session> _sessionFactory;
 
         public void Init(IPEndPoint endPoint, Func<Session> sessionFactory)
         {
@@ -51,11 +52,6 @@ namespace ServerCore
             }
 
             RegisterAccept(args);
-        }
-
-        public Socket Accept()
-        {
-            return _listenSocket.Accept();
         }
     }
 }

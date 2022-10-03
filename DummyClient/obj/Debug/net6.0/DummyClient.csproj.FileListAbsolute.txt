@@ -13,3 +13,6 @@
 /Users/hyunmyunghan/Documents/GitHub/ServerPractice/SocketProgramming/DummyClient/obj/Debug/net6.0/DummyClient.pdb
 /Users/hyunmyunghan/Documents/GitHub/ServerPractice/SocketProgramming/DummyClient/obj/Debug/net6.0/DummyClient.genruntimeconfig.cache
 /Users/hyunmyunghan/Documents/GitHub/ServerPractice/SocketProgramming/DummyClient/obj/Debug/net6.0/ref/DummyClient.dll
+/Users/hyunmyunghan/Documents/GitHub/ServerPractice/SocketProgramming/DummyClient/bin/Debug/net6.0/ServerCore.dll
+/Users/hyunmyunghan/Documents/GitHub/ServerPractice/SocketProgramming/DummyClient/bin/Debug/net6.0/ServerCore.pdb
+/Users/hyunmyunghan/Documents/GitHub/ServerPractice/SocketProgramming/DummyClient/obj/Debug/net6.0/DummyClient.csproj.CopyComplete

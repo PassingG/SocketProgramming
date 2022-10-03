@@ -1,10 +1,13 @@
+using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 
 namespace ServerCore
 {
-    abstract class Session
+    public abstract class Session
     {
         private Socket _socket;
         private int _disconnected = 0;
@@ -87,6 +90,8 @@ namespace ServerCore
                         _sendArgs.BufferList = null;
                         _pendingList.Clear();
 
+                        OnSend(_sendArgs.BytesTransferred);
+
                         if (_sendQueue.Count > 0)
                         {
                             RegisterSend();
@@ -111,8 +116,6 @@ namespace ServerCore
             {
                 OnReceiveCompleted(null, _receiveArgs);
             }
-
-            _socket.ReceiveAsync(_receiveArgs);
         }
 
         private void OnReceiveCompleted(object sender, SocketAsyncEventArgs args)
