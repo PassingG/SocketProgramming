@@ -12,6 +12,8 @@ namespace ServerCore
         private Socket _socket;
         private int _disconnected = 0;
 
+        private ReceiveBuffer _receiveBuffer = new ReceiveBuffer(1024);
+
         private object _lock = new object();
 
         private Queue<byte[]> _sendQueue = new Queue<byte[]>();
@@ -21,7 +23,7 @@ namespace ServerCore
         private SocketAsyncEventArgs _sendArgs = new SocketAsyncEventArgs();
         private SocketAsyncEventArgs _receiveArgs = new SocketAsyncEventArgs();
 
-        public abstract void OnReceive(ArraySegment<byte> buffer);
+        public abstract int OnReceive(ArraySegment<byte> buffer);
         public abstract void OnConnected(EndPoint endPoint);
         public abstract void OnSend(int numberOfBytes);
         public abstract void OnDisconnected(EndPoint endPoint);
@@ -30,7 +32,6 @@ namespace ServerCore
         {
             _socket = socket;
             _receiveArgs.Completed += new EventHandler<SocketAsyncEventArgs>(OnReceiveCompleted);
-            _receiveArgs.SetBuffer(new byte[1024], 0, 1024);
 
             _sendArgs.Completed += new EventHandler<SocketAsyncEventArgs>(OnSendCompleted);
 
@@ -111,6 +112,10 @@ namespace ServerCore
 
         private void RegisterReceive()
         {
+            _receiveBuffer.Clean();
+            ArraySegment<byte> segment = _receiveBuffer.WriteSegment;
+            _receiveArgs.SetBuffer(segment.Array, segment.Offset, segment.Count);
+
             bool pending = _socket.ReceiveAsync(_receiveArgs);
             if (pending.Equals(false))
             {
@@ -124,7 +129,28 @@ namespace ServerCore
             {
                 try
                 {
-                    OnReceive(new ArraySegment<byte>(args.Buffer, args.Offset, args.BytesTransferred));
+                    // Move write cursor
+                    if (_receiveBuffer.OnWrite(args.BytesTransferred).Equals(false))
+                    {
+                        Disconnect();
+                        return;
+                    }
+
+                    // Hand over the data to the content and receive how much it has been processed
+                    int processeLength = OnReceive(new ArraySegment<byte>(args.Buffer, args.Offset, args.BytesTransferred));
+                    if (processeLength < 0 || _receiveBuffer.DataSize < processeLength)
+                    {
+                        Disconnect();
+                        return;
+                    }
+
+                    // Move read cursor
+                    if (_receiveBuffer.OnRead(processeLength).Equals(false))
+                    {
+                        Disconnect();
+                        return;
+                    }
+
                     RegisterReceive();
                 }
                 catch (Exception e)
