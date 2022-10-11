@@ -5,13 +5,27 @@ using ServerCore;
 
 namespace Server
 {
+    public class Knight
+    {
+        public int hp;
+        public int attack;
+    }
+
     class GameSession : Session
     {
         public override void OnConnected(EndPoint endPoint)
         {
             Console.WriteLine($"OnConnected : {endPoint}");
 
-            byte[] sendBuffer = Encoding.UTF8.GetBytes("Welcome to MMORPG Server !");
+            Knight knight = new Knight() { hp = 100, attack = 10 };
+
+            ArraySegment<byte> openSegment = SendBufferHelper.Open(4096);
+            byte[] buffer = BitConverter.GetBytes(knight.hp);
+            byte[] buffer2 = BitConverter.GetBytes(knight.attack);
+            Array.Copy(buffer, 0, openSegment.Array, openSegment.Offset, buffer.Length);
+            Array.Copy(buffer2, 0, openSegment.Array, openSegment.Offset + buffer.Length, buffer2.Length);
+            ArraySegment<byte> sendBuffer = SendBufferHelper.Close(buffer.Length + buffer2.Length);
+
             Send(sendBuffer);
             Thread.Sleep(1000);
             Disconnect();
@@ -37,21 +51,30 @@ namespace Server
 
     class Program
     {
-        static Listener _listner = new Listener();
+        static Listener _listener = new Listener();
 
         static void Main(string[] args)
         {
+            Console.WriteLine("aa");
             // DNS (Domain Name System)
             string host = Dns.GetHostName();
             IPHostEntry ipHost = Dns.GetHostEntry(host);
             IPAddress ipAddress = ipHost.AddressList[0];
+            Console.WriteLine(ipAddress.AddressFamily);
             IPEndPoint endPoint = new IPEndPoint(ipAddress, 7777);
 
-            _listner.Init(endPoint, () => { return new GameSession(); });
+            _listener.Init(endPoint, () => { return new GameSession(); });
+
+            DateTime before = DateTime.Now;
 
             while (true)
             {
+                // if ((DateTime.Now - before).TotalSeconds > 1)
+                // {
+                //     Console.WriteLine("aa");
 
+                //     before = DateTime.Now;
+                // }
             }
         }
     }

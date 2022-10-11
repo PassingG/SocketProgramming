@@ -15,7 +15,7 @@ namespace DummyClient
             for (int i = 0; i < 5; i++)
             {
                 byte[] sendBuff = Encoding.UTF8.GetBytes($"Hello, world! {i}");
-                Send(sendBuff);
+                Send(new ArraySegment<byte>(sendBuff, 0, sendBuff.Length));
             }
 
             Disconnect();

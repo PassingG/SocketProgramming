@@ -16,7 +16,7 @@ namespace ServerCore
 
         private object _lock = new object();
 
-        private Queue<byte[]> _sendQueue = new Queue<byte[]>();
+        private Queue<ArraySegment<byte>> _sendQueue = new Queue<ArraySegment<byte>>();
 
         private List<ArraySegment<byte>> _pendingList = new List<ArraySegment<byte>>();
 
@@ -38,11 +38,13 @@ namespace ServerCore
             RegisterReceive();
         }
 
-        public void Send(byte[] sendBuffer)
+        public void Send(ArraySegment<byte> sendBuffer)
         {
             lock (_lock)
             {
+                Console.WriteLine($"SendBuffSize : {sendBuffer.Count}");
                 _sendQueue.Enqueue(sendBuffer);
+                Console.WriteLine($"PendingCount : {_pendingList.Count}");
                 if (_pendingList.Count.Equals(0))
                 {
                     RegisterSend();
@@ -68,8 +70,8 @@ namespace ServerCore
         {
             while (_sendQueue.Count > 0)
             {
-                byte[] buffer = _sendQueue.Dequeue();
-                _pendingList.Add(new ArraySegment<byte>(buffer, 0, buffer.Length));
+                ArraySegment<byte> buffer = _sendQueue.Dequeue();
+                _pendingList.Add(buffer);
             }
             _sendArgs.BufferList = _pendingList;
 
@@ -125,6 +127,10 @@ namespace ServerCore
 
         private void OnReceiveCompleted(object sender, SocketAsyncEventArgs args)
         {
+            Console.WriteLine($"ReceivedBytes : {args.BytesTransferred > 0}");
+            Console.WriteLine($"Success : {args.SocketError.Equals(SocketError.Success)}");
+
+
             if (args.BytesTransferred > 0 && args.SocketError.Equals(SocketError.Success))
             {
                 try
@@ -137,6 +143,7 @@ namespace ServerCore
                     }
 
                     // Hand over the data to the content and receive how much it has been processed
+                    Console.WriteLine($"Received : {args.BytesTransferred}");
                     int processeLength = OnReceive(new ArraySegment<byte>(args.Buffer, args.Offset, args.BytesTransferred));
                     if (processeLength < 0 || _receiveBuffer.DataSize < processeLength)
                     {
