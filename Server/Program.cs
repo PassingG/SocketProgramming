@@ -38,6 +38,7 @@ namespace Server
 
         public override int OnReceive(ArraySegment<byte> buffer)
         {
+            if (buffer.Count <= 0) return 0;
             string receiveData = Encoding.UTF8.GetString(buffer.Array, buffer.Offset, buffer.Count);
             Console.WriteLine($"[From Client] {receiveData}");
             return buffer.Count;
@@ -55,12 +56,10 @@ namespace Server
 
         static void Main(string[] args)
         {
-            Console.WriteLine("aa");
             // DNS (Domain Name System)
             string host = Dns.GetHostName();
             IPHostEntry ipHost = Dns.GetHostEntry(host);
-            IPAddress ipAddress = ipHost.AddressList[0];
-            Console.WriteLine(ipAddress.AddressFamily);
+            IPAddress ipAddress = ipHost.AddressList[1];
             IPEndPoint endPoint = new IPEndPoint(ipAddress, 7777);
 
             _listener.Init(endPoint, () => { return new GameSession(); });

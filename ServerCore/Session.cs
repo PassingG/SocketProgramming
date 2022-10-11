@@ -42,9 +42,7 @@ namespace ServerCore
         {
             lock (_lock)
             {
-                Console.WriteLine($"SendBuffSize : {sendBuffer.Count}");
                 _sendQueue.Enqueue(sendBuffer);
-                Console.WriteLine($"PendingCount : {_pendingList.Count}");
                 if (_pendingList.Count.Equals(0))
                 {
                     RegisterSend();
@@ -127,10 +125,6 @@ namespace ServerCore
 
         private void OnReceiveCompleted(object sender, SocketAsyncEventArgs args)
         {
-            Console.WriteLine($"ReceivedBytes : {args.BytesTransferred > 0}");
-            Console.WriteLine($"Success : {args.SocketError.Equals(SocketError.Success)}");
-
-
             if (args.BytesTransferred > 0 && args.SocketError.Equals(SocketError.Success))
             {
                 try
@@ -143,7 +137,6 @@ namespace ServerCore
                     }
 
                     // Hand over the data to the content and receive how much it has been processed
-                    Console.WriteLine($"Received : {args.BytesTransferred}");
                     int processeLength = OnReceive(new ArraySegment<byte>(args.Buffer, args.Offset, args.BytesTransferred));
                     if (processeLength < 0 || _receiveBuffer.DataSize < processeLength)
                     {

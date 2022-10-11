@@ -15,7 +15,7 @@ namespace DummyClient
             for (int i = 0; i < 5; i++)
             {
                 byte[] sendBuff = Encoding.UTF8.GetBytes($"Hello, world! {i}");
-                Send(new ArraySegment<byte>(sendBuff, 0, sendBuff.Length));
+                Send(sendBuff);
             }
 
             Disconnect();
@@ -46,7 +46,7 @@ namespace DummyClient
             // DNS (Domain Name System)
             string host = Dns.GetHostName();
             IPHostEntry ipHost = Dns.GetHostEntry(host);
-            IPAddress ipAddress = ipHost.AddressList[0];
+            IPAddress ipAddress = ipHost.AddressList[1];
             IPEndPoint endPoint = new IPEndPoint(ipAddress, 7777);
 
             Connector connector = new Connector();
