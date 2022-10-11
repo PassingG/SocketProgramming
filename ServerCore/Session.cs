@@ -7,6 +7,41 @@ using System.Threading;
 
 namespace ServerCore
 {
+    public abstract class PacketSession : Session
+    {
+        public static readonly int HeaderSize = 2;
+
+        public sealed override int OnReceive(ArraySegment<byte> buffer)
+        {
+            int processLength = 0;
+
+            while (true)
+            {
+                // At least make sure the header can be parsed.
+                if (buffer.Count < HeaderSize)
+                {
+                    break;
+                }
+
+                // Verify that the packet arrived completely.
+                ushort dataSize = BitConverter.ToUInt16(buffer.Array, buffer.Offset);
+                if (buffer.Count < dataSize)
+                {
+                    break;
+                }
+
+                // Packets can be assembled if you've come all the way here.
+                OnReceivePacket(new ArraySegment<byte>(buffer.Array, buffer.Offset, dataSize));
+
+                processLength += dataSize;
+                buffer = new ArraySegment<byte>(buffer.Array, buffer.Offset + dataSize, buffer.Count - dataSize);
+            }
+            return 0;
+        }
+
+        public abstract void OnReceivePacket(ArraySegment<byte> buffer);
+    }
+
     public abstract class Session
     {
         private Socket _socket;
